@@ -2,7 +2,8 @@ const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
 const FormData = require('form-data');
-const http = require('http');
+const http = require('http'); // We can keep using http for simplicity
+const https = require('https'); // We might need this for https requests
 
 const app = express();
 const port = 4000;
@@ -12,83 +13,31 @@ app.use(express.static('public'));
 
 app.post('/merge', upload.array('files'), (req, res) => {
     
-    const cleanupFiles = () => { /* ... (no changes here) ... */ };
-
-    try {
-        const form = new FormData();
+    const cleanupFiles = () => {
         for (const file of req.files) {
-            // <<<<<<<<<<<< THE FINAL FIX IS HERE >>>>>>>>>>>>
-            // We pass the original filename to Gotenberg so it knows the file type (.pdf)
-            form.append('files', fs.createReadStream(file.path), { filename: file.originalname });
+            fs.unlink(file.path, (err) => {
+                if (err) console.error('Error deleting temp file:', err.message);
+            });
         }
-        
-        // pdfFormat is not needed for merge, let's remove it to be safe
-        // form.append('pdfFormat', 'PDF/A-1b'); // This line can be removed
-
-        const request = http.request(
-            {
-                method: 'POST',
-                host: '127.0.0.1',
-                port: 3000,
-                path: '/forms/pdfengines/merge',
-                headers: form.getHeaders(),
-            },
-            (response) => {
-                if (response.statusCode !== 200) {
-                    // ... (no changes here) ...
-                    return;
-                }
-                
-                res.setHeader('Content-Type', 'application/pdf');
-                res.setHeader('Content-Disposition', 'attachment; filename=merged-result.pdf');
-                response.pipe(res);
-                
-                res.on('finish', cleanupFiles);
-            }
-        );
-        
-        request.on('error', (err) => { /* ... (no changes here) ... */ });
-        
-        form.pipe(request);
-
-    } catch (error) { /* ... (no changes here) ... */ }
-});
-
-app.listen(port, () => {
-  console.log(`Server is running and listening on http://localhost:${port}`);
-});
-
-// We need to re-add the cleanup function here for completeness
-const cleanupFilesForPost = (files) => {
-    for (const file of files) {
-        fs.unlink(file.path, (err) => {
-            if (err) console.error('Error deleting temp file:', err);
-        });
-    }
-};
-
-// Final complete code:
-const finalApp = express();
-const finalUpload = multer({ dest: 'uploads/' });
-
-finalApp.use(express.static('public'));
-
-finalApp.post('/merge', finalUpload.array('files'), (req, res) => {
-    
-    const cleanup = () => cleanupFilesForPost(req.files);
+    };
 
     try {
         const form = new FormData();
         for (const file of req.files) {
             form.append('files', fs.createReadStream(file.path), { filename: file.originalname });
         }
+
+        console.log('Sending files to the LIVE Gotenberg service on Fly.io...');
+
+        // <<<<<<<<<<<< THE MOST IMPORTANT CHANGE IS HERE >>>>>>>>>>>>
+        // We are now pointing to our live Gotenberg engine on the internet.
+        const gotenbergUrl = 'https://shaheem-gotenberg.fly.dev/forms/pdfengines/merge';
         
-        const request = http.request(
+        // We create a request using the native https module since the URL is https
+        const request = https.request(
+            gotenbergUrl,
             {
                 method: 'POST',
-                host: '127.0.0.1',
-                port: 3000,
-                path: '/forms/pdfengines/merge',
                 headers: form.getHeaders(),
             },
             (response) => {
@@ -96,33 +45,39 @@ finalApp.post('/merge', finalUpload.array('files'), (req, res) => {
                     console.error(`Gotenberg returned an error: ${response.statusCode}`);
                     response.on('data', (chunk) => console.error('Gotenberg error message:', chunk.toString()));
                     res.status(500).send('Sorry, Gotenberg could not process the files.');
-                    cleanup();
+                    cleanupFiles();
                     return;
                 }
                 
                 res.setHeader('Content-Type', 'application/pdf');
                 res.setHeader('Content-Disposition', 'attachment; filename=merged-result.pdf');
                 response.pipe(res);
-                
-                res.on('finish', cleanup);
+                console.log('Successfully sent merged PDF to user.');
+
+                res.on('finish', cleanupFiles);
             }
         );
         
         request.on('error', (err) => {
             console.error('Network error connecting to Gotenberg:', err.message);
             res.status(500).send('Could not connect to the Gotenberg service.');
-            cleanup();
+            cleanupFiles();
         });
         
         form.pipe(request);
 
     } catch (error) {
-        console.error('An unexpected error occurred:', error.message);
+        console.error('An unexpected error occurred in the /merge route:', error.message);
         res.status(500).send('An unexpected error occurred on the server.');
-        cleanup();
+        cleanupFiles();
     }
 });
 
-finalApp.listen(port, () => {
-  console.log(`Server is running and listening on http://localhost:${port}`);
+// A small change is needed for Render deployment
+// Render provides a PORT environment variable. We should use that.
+// If it doesn't exist (like on our local computer), we fall back to 4000.
+const PORT = process.env.PORT || 4000;
+
+app.listen(PORT, () => {
+  console.log(`Server is running and listening on port ${PORT}`);
 });
