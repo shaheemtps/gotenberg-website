@@ -62,9 +62,11 @@ app.post('/merge', upload.array('files'), (req, res) => {
 // --- ROUTE 2: CONVERT HTML TO PDF ---
 app.post('/convert-html', upload.single('htmlfile'), (req, res) => {
     const cleanupFile = () => {
-        fs.unlink(req.file.path, (err) => {
-            if (err) console.error('Error deleting temp file:', err.message);
-        });
+        if (req.file) { // Check if req.file exists before trying to delete
+            fs.unlink(req.file.path, (err) => {
+                if (err) console.error('Error deleting temp file:', err.message);
+            });
+        }
     };
 
     try {
@@ -101,23 +103,25 @@ app.post('/convert-html', upload.single('htmlfile'), (req, res) => {
     } catch (error) {
         console.error('Unexpected error in /convert-html route:', error.message);
         res.status(500).send('An unexpected server error occurred.');
-        cleanupFile();
+        if (req.file) cleanupFile();
     }
 });
 
 
-// --- ROUTE 3: SPLIT PDF (NEW!) ---
+// --- ROUTE 3: SPLIT PDF ---
 app.post('/split', upload.single('pdffile'), (req, res) => {
     const cleanupFile = () => {
-        fs.unlink(req.file.path, (err) => {
-            if (err) console.error('Error deleting temp file:', err.message);
-        });
+        if (req.file) { // Check if req.file exists
+            fs.unlink(req.file.path, (err) => {
+                if (err) console.error('Error deleting temp file:', err.message);
+            });
+        }
     };
 
     try {
         const form = new FormData();
         form.append('files', fs.createReadStream(req.file.path), { filename: req.file.originalname });
-        form.append('intervals', req.body.ranges); // Get ranges from the text input
+        form.append('intervals', req.body.ranges);
 
         console.log(`Sending PDF to Gotenberg for splitting with ranges: ${req.body.ranges}`);
         const gotenbergUrl = 'https://shaheem-gotenberg.fly.dev/forms/pdfengines/split';
@@ -147,7 +151,7 @@ app.post('/split', upload.single('pdffile'), (req, res) => {
     } catch (error) {
         console.error('Unexpected error in /split route:', error.message);
         res.status(500).send('An unexpected server error occurred.');
-        cleanupFile();
+        if (req.file) cleanupFile();
     }
 });
 
@@ -155,4 +159,4 @@ app.post('/split', upload.single('pdffile'), (req, res) => {
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Server is running and listening on port ${PORT}`);
-});```
+});
