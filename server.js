@@ -108,7 +108,7 @@ app.post('/convert-html', upload.single('htmlfile'), (req, res) => {
 });
 
 
-// --- ROUTE 3: SPLIT PDF ---
+// --- ROUTE 3: SPLIT PDF (CORRECTED) ---
 app.post('/split', upload.single('pdffile'), (req, res) => {
     const cleanupFile = () => {
         if (req.file) {
@@ -121,11 +121,12 @@ app.post('/split', upload.single('pdffile'), (req, res) => {
     try {
         const form = new FormData();
         form.append('files', fs.createReadStream(req.file.path), { filename: req.file.originalname });
+        
+        // <<<<<<<<<<<< THE FINAL FIX IS HERE >>>>>>>>>>>>
+        // As the error log showed, Gotenberg v8 requires all three of these fields.
         form.append('intervals', req.body.ranges);
-
-        // <<<<<<<<<<<< ADDED THIS LINE AS A FIX >>>>>>>>>>>>
-        // It's possible the split engine also requires a target format.
-        form.append('pdfFormat', 'PDF/A-1b');
+        form.append('splitMode', 'intervals');
+        form.append('splitSpan', '1');
 
         console.log(`Sending PDF to Gotenberg for splitting with ranges: ${req.body.ranges}`);
         const gotenbergUrl = 'https://shaheem-gotenberg.fly.dev/forms/pdfengines/split';
@@ -163,4 +164,11 @@ app.post('/split', upload.single('pdffile'), (req, res) => {
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Server is running and listening on port ${PORT}`);
-});
+});```
+
+Now, save this file and push it to GitHub one last time.
+
+```bash
+git add .
+git commit -m "fix: Add all required fields for split API"
+git push origin main
