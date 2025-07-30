@@ -62,7 +62,7 @@ app.post('/merge', upload.array('files'), (req, res) => {
 // --- ROUTE 2: CONVERT HTML TO PDF ---
 app.post('/convert-html', upload.single('htmlfile'), (req, res) => {
     const cleanupFile = () => {
-        if (req.file) { // Check if req.file exists before trying to delete
+        if (req.file) {
             fs.unlink(req.file.path, (err) => {
                 if (err) console.error('Error deleting temp file:', err.message);
             });
@@ -111,7 +111,7 @@ app.post('/convert-html', upload.single('htmlfile'), (req, res) => {
 // --- ROUTE 3: SPLIT PDF ---
 app.post('/split', upload.single('pdffile'), (req, res) => {
     const cleanupFile = () => {
-        if (req.file) { // Check if req.file exists
+        if (req.file) {
             fs.unlink(req.file.path, (err) => {
                 if (err) console.error('Error deleting temp file:', err.message);
             });
@@ -122,6 +122,10 @@ app.post('/split', upload.single('pdffile'), (req, res) => {
         const form = new FormData();
         form.append('files', fs.createReadStream(req.file.path), { filename: req.file.originalname });
         form.append('intervals', req.body.ranges);
+
+        // <<<<<<<<<<<< ADDED THIS LINE AS A FIX >>>>>>>>>>>>
+        // It's possible the split engine also requires a target format.
+        form.append('pdfFormat', 'PDF/A-1b');
 
         console.log(`Sending PDF to Gotenberg for splitting with ranges: ${req.body.ranges}`);
         const gotenbergUrl = 'https://shaheem-gotenberg.fly.dev/forms/pdfengines/split';
