@@ -1,3 +1,4 @@
+// Forcing a change for Git to detect
 const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
@@ -108,7 +109,7 @@ app.post('/convert-html', upload.single('htmlfile'), (req, res) => {
 });
 
 
-// --- ROUTE 3: SPLIT PDF (CORRECTED) ---
+// --- ROUTE 3: SPLIT PDF ---
 app.post('/split', upload.single('pdffile'), (req, res) => {
     const cleanupFile = () => {
         if (req.file) {
@@ -121,9 +122,6 @@ app.post('/split', upload.single('pdffile'), (req, res) => {
     try {
         const form = new FormData();
         form.append('files', fs.createReadStream(req.file.path), { filename: req.file.originalname });
-        
-        // <<<<<<<<<<<< THE FINAL FIX IS HERE >>>>>>>>>>>>
-        // As the error log showed, Gotenberg v8 requires all three of these fields.
         form.append('intervals', req.body.ranges);
         form.append('splitMode', 'intervals');
         form.append('splitSpan', '1');
@@ -166,9 +164,4 @@ app.listen(PORT, () => {
   console.log(`Server is running and listening on port ${PORT}`);
 });```
 
-Now, save this file and push it to GitHub one last time.
-
-```bash
-git add .
-git commit -m "fix: Add all required fields for split API"
-git push origin main
+ഈ കോഡ് സേവ് ചെയ്തതിന് ശേഷം, Git കമാൻഡുകൾ ഒന്നുകൂടി പ്രവർത്തിപ്പിക്കുക.
