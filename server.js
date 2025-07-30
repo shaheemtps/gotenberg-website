@@ -163,5 +163,3 @@ const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Server is running and listening on port ${PORT}`);
 });```
-
-ഈ കോഡ് സേവ് ചെയ്തതിന് ശേഷം, Git കമാൻഡുകൾ ഒന്നുകൂടി പ്രവർത്തിപ്പിക്കുക.
