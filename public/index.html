@@ -13,6 +13,7 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
+            padding: 20px; /* Add some padding for smaller screens */
         }
         .container {
             background-color: #ffffff;
@@ -43,7 +44,7 @@
             border-radius: 5px;
             display: flex;
             flex-direction: column;
-            gap: 15px; /* Adds space between form elements */
+            gap: 15px;
         }
         input[type="file"] {
             color: #555;
@@ -57,7 +58,7 @@
             font-size: 16px;
             cursor: pointer;
             transition: background-color 0.2s;
-            align-self: flex-start; /* Aligns button to the left */
+            align-self: flex-start;
         }
         button[type="submit"]:hover {
             background-color: #0056b3;
@@ -75,23 +76,9 @@
         <h2>Merge PDFs</h2>
         <p>Upload multiple PDF files to combine them into a single document.</p>
         
-        <!-- This is the form for merging PDFs -->
-        <!-- 
-            action="/merge": Submits the form data to the /merge URL on our server.
-            method="POST": Uses the POST HTTP method, which is necessary for sending files.
-            enctype="multipart/form-data": Specifies that the form will contain file uploads.
-        -->
         <form action="/merge" method="POST" enctype="multipart/form-data">
-            
-            <!-- 
-                type="file": Creates a "Choose Files" button.
-                name="files": This name MUST match the name used in multer's upload.array('files').
-                multiple: Allows the user to select more than one file.
-                required: Ensures the user selects at least one file before submitting.
-            -->
             <label for="merge-files">Select PDF files:</label>
             <input type="file" id="merge-files" name="files" accept=".pdf" multiple required>
-            
             <button type="submit">Merge Files</button>
         </form>
 
@@ -99,7 +86,17 @@
 
         <h2>Convert HTML to PDF</h2>
         <p>Upload an HTML file to convert it into a PDF.</p>
-        <!-- The form for HTML conversion will go here in a future step. -->
+        
+        <!-- This is the new form for HTML to PDF conversion -->
+        <form action="/convert-html" method="POST" enctype="multipart/form-data">
+            <label for="html-file">Select an HTML file:</label>
+            <!-- 
+                name="htmlfile": This name matches what we will use in server.js (upload.single('htmlfile')).
+                accept=".html,.htm": Suggests to the user that only HTML files should be selected.
+            -->
+            <input type="file" id="html-file" name="htmlfile" accept=".html,.htm" required>
+            <button type="submit">Convert to PDF</button>
+        </form>
     </div>
 
 </body>
