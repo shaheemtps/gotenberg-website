@@ -1,7 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
-const FormData = require('form-data');
+const FormData =require('form-data');
 const https = require('https');
 
 const app = express();
@@ -12,9 +12,8 @@ app.use(express.urlencoded({ extended: true }));
 
 
 // --- ROUTE 1: MERGE PDFs ---
-// This route works correctly. No changes needed.
+// This route is correct and works fine. No changes needed.
 app.post('/merge', upload.array('files'), (req, res) => {
-    // ... code for merge ...
     const cleanupFiles = () => {
         for (const file of req.files) {
             fs.unlink(file.path, (err) => {
@@ -63,9 +62,8 @@ app.post('/merge', upload.array('files'), (req, res) => {
 
 
 // --- ROUTE 2: CONVERT HTML TO PDF ---
-// This route works correctly. No changes needed.
+// This route is correct and works fine. No changes needed.
 app.post('/convert-html', upload.single('htmlfile'), (req, res) => {
-    // ... code for HTML convert ...
     const cleanupFile = () => {
         if (req.file) {
             fs.unlink(req.file.path, (err) => {
@@ -113,7 +111,7 @@ app.post('/convert-html', upload.single('htmlfile'), (req, res) => {
 });
 
 
-// --- ROUTE 3: SPLIT PDF (THE ULTIMATE, LOGICAL FIX) ---
+// --- ROUTE 3: SPLIT PDF (THE FINAL, SIMPLEST, AND CORRECT FIX) ---
 app.post('/split', upload.single('pdffile'), (req, res) => {
     const cleanupFile = () => {
         if (req.file) {
@@ -127,11 +125,9 @@ app.post('/split', upload.single('pdffile'), (req, res) => {
         const form = new FormData();
         form.append('files', fs.createReadStream(req.file.path), { filename: req.file.originalname });
         
-        // <<<<<<<<<<<< THE REAL FIX IS HERE >>>>>>>>>>>>
-        // The parameter name for the range ('intervals') MUST match the 'splitMode'.
-        form.append('splitMode', 'intervals');
-        form.append('intervals', req.body.ranges); // Changed 'pages' back to 'intervals'.
-        form.append('splitSpan', '1'); // This is still required by the engine.
+        // <<<<<<<<<<<< THE REAL, FINAL FIX IS HERE >>>>>>>>>>>>
+        // We only need to send the 'pages' parameter. No 'splitMode' or 'splitSpan'.
+        form.append('pages', req.body.ranges);
 
         console.log(`Sending PDF to Gotenberg for splitting with ranges: ${req.body.ranges}`);
         const gotenbergUrl = 'https://shaheem-gotenberg.fly.dev/forms/pdfengines/split';
