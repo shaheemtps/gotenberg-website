@@ -7,10 +7,14 @@ const https = require('https');
 const app = express();
 const upload = multer({ dest: 'uploads/' });
 
-// Serve static files from the 'public' directory
+// Serve static files (like index.html) from the 'public' directory
 app.use(express.static('public'));
 
-// --- ROUTE 1: MERGE PDFs ---
+// This middleware is needed to parse text fields from forms (like the 'ranges' input)
+app.use(express.urlencoded({ extended: true }));
+
+
+// --- ROUTE 1: MERGE PDFS ---
 app.post('/merge', upload.array('files'), (req, res) => {
     const cleanupFiles = () => {
         for (const file of req.files) {
@@ -121,6 +125,8 @@ app.post('/split', upload.single('pdffile'), (req, res) => {
     try {
         const form = new FormData();
         form.append('files', fs.createReadStream(req.file.path), { filename: req.file.originalname });
+        
+        // This should now work correctly because of the urlencoded middleware
         form.append('intervals', req.body.ranges);
 
         console.log(`Sending PDF to Gotenberg for splitting with ranges: ${req.body.ranges}`);
