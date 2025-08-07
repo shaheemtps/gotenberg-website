@@ -7,15 +7,12 @@ const https = require('https');
 const app = express();
 const upload = multer({ dest: 'uploads/' });
 
-// Serve static files (like index.html) from the 'public' directory
 app.use(express.static('public'));
-
-// This middleware is needed to parse text fields from forms (like the 'ranges' input)
 app.use(express.urlencoded({ extended: true }));
 
 
 // --- ROUTE 1: MERGE PDFs ---
-// (This route is correct and requires no changes)
+// This route works correctly. No changes needed.
 app.post('/merge', upload.array('files'), (req, res) => {
     // ... code for merge ...
     const cleanupFiles = () => {
@@ -66,7 +63,7 @@ app.post('/merge', upload.array('files'), (req, res) => {
 
 
 // --- ROUTE 2: CONVERT HTML TO PDF ---
-// (This route is correct and requires no changes)
+// This route works correctly. No changes needed.
 app.post('/convert-html', upload.single('htmlfile'), (req, res) => {
     // ... code for HTML convert ...
     const cleanupFile = () => {
@@ -116,7 +113,7 @@ app.post('/convert-html', upload.single('htmlfile'), (req, res) => {
 });
 
 
-// --- ROUTE 3: SPLIT PDF (WITH THE FINAL FIX) ---
+// --- ROUTE 3: SPLIT PDF (THE FINAL, SIMPLIFIED FIX) ---
 app.post('/split', upload.single('pdffile'), (req, res) => {
     const cleanupFile = () => {
         if (req.file) {
@@ -129,12 +126,10 @@ app.post('/split', upload.single('pdffile'), (req, res) => {
     try {
         const form = new FormData();
         form.append('files', fs.createReadStream(req.file.path), { filename: req.file.originalname });
+        
+        // According to Gotenberg v8 documentation, only 'intervals' is needed.
+        // The other fields ('splitMode', 'splitSpan') were causing a conflict.
         form.append('intervals', req.body.ranges);
-
-        // <<<<<<<<<<<< THE FINAL FIX IS HERE >>>>>>>>>>>>
-        // These two fields are required by Gotenberg v8 for the split engine.
-        form.append('splitMode', 'intervals');
-        form.append('splitSpan', '1');
 
         console.log(`Sending PDF to Gotenberg for splitting with ranges: ${req.body.ranges}`);
         const gotenbergUrl = 'https://shaheem-gotenberg.fly.dev/forms/pdfengines/split';
