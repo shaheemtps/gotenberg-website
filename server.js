@@ -12,9 +12,9 @@ app.use(express.urlencoded({ extended: true }));
 
 
 // --- ROUTE 1: MERGE PDFs ---
-// This route is correct and works fine.
+// This route works correctly. No changes needed.
 app.post('/merge', upload.array('files'), (req, res) => {
-    // ... no changes here ...
+    // ... code for merge ...
     const cleanupFiles = () => {
         for (const file of req.files) {
             fs.unlink(file.path, (err) => {
@@ -63,9 +63,9 @@ app.post('/merge', upload.array('files'), (req, res) => {
 
 
 // --- ROUTE 2: CONVERT HTML TO PDF ---
-// This route is correct and works fine.
+// This route works correctly. No changes needed.
 app.post('/convert-html', upload.single('htmlfile'), (req, res) => {
-    // ... no changes here ...
+    // ... code for HTML convert ...
     const cleanupFile = () => {
         if (req.file) {
             fs.unlink(req.file.path, (err) => {
@@ -113,7 +113,7 @@ app.post('/convert-html', upload.single('htmlfile'), (req, res) => {
 });
 
 
-// --- ROUTE 3: SPLIT PDF (WITH THE FINAL, CORRECT PARAMETER NAME) ---
+// --- ROUTE 3: SPLIT PDF (THE ULTIMATE FIX - COMBINING ALL PARAMS) ---
 app.post('/split', upload.single('pdffile'), (req, res) => {
     const cleanupFile = () => {
         if (req.file) {
@@ -128,8 +128,10 @@ app.post('/split', upload.single('pdffile'), (req, res) => {
         form.append('files', fs.createReadStream(req.file.path), { filename: req.file.originalname });
         
         // <<<<<<<<<<<< THE FINAL FIX IS HERE >>>>>>>>>>>>
-        // The correct parameter name is 'pages', not 'intervals'.
+        // We need to provide ALL three parameters for Gotenberg v8 to understand the request.
         form.append('pages', req.body.ranges);
+        form.append('splitMode', 'intervals'); // 'intervals' is the mode for splitting by ranges.
+        form.append('splitSpan', '1'); // This is required, even if not used in 'intervals' mode.
 
         console.log(`Sending PDF to Gotenberg for splitting with ranges: ${req.body.ranges}`);
         const gotenbergUrl = 'https://shaheem-gotenberg.fly.dev/forms/pdfengines/split';
