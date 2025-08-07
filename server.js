@@ -1,4 +1,3 @@
-// Forcing a change for Git to detect
 const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
@@ -123,8 +122,6 @@ app.post('/split', upload.single('pdffile'), (req, res) => {
         const form = new FormData();
         form.append('files', fs.createReadStream(req.file.path), { filename: req.file.originalname });
         form.append('intervals', req.body.ranges);
-        form.append('splitMode', 'intervals');
-        form.append('splitSpan', '1');
 
         console.log(`Sending PDF to Gotenberg for splitting with ranges: ${req.body.ranges}`);
         const gotenbergUrl = 'https://shaheem-gotenberg.fly.dev/forms/pdfengines/split';
@@ -162,4 +159,4 @@ app.post('/split', upload.single('pdffile'), (req, res) => {
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Server is running and listening on port ${PORT}`);
-});```
+});
