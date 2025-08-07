@@ -1,7 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
-const FormData =require('form-data');
+const FormData = require('form-data');
 const https = require('https');
 
 const app = express();
@@ -14,6 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 // --- ROUTE 1: MERGE PDFs ---
 // This route is correct and works fine. No changes needed.
 app.post('/merge', upload.array('files'), (req, res) => {
+    // ... no changes here ...
     const cleanupFiles = () => {
         for (const file of req.files) {
             fs.unlink(file.path, (err) => {
@@ -64,6 +65,7 @@ app.post('/merge', upload.array('files'), (req, res) => {
 // --- ROUTE 2: CONVERT HTML TO PDF ---
 // This route is correct and works fine. No changes needed.
 app.post('/convert-html', upload.single('htmlfile'), (req, res) => {
+    // ... no changes here ...
     const cleanupFile = () => {
         if (req.file) {
             fs.unlink(req.file.path, (err) => {
@@ -111,7 +113,7 @@ app.post('/convert-html', upload.single('htmlfile'), (req, res) => {
 });
 
 
-// --- ROUTE 3: SPLIT PDF (THE FINAL, SIMPLEST, AND CORRECT FIX) ---
+// --- ROUTE 3: SPLIT PDF (WITH DIAGNOSTIC LOGGING) ---
 app.post('/split', upload.single('pdffile'), (req, res) => {
     const cleanupFile = () => {
         if (req.file) {
@@ -122,19 +124,23 @@ app.post('/split', upload.single('pdffile'), (req, res) => {
     };
 
     try {
+        // <<<<<<<<<<<< OUR DETECTIVE TOOL IS HERE >>>>>>>>>>>>
+        // Let's log what we receive from the form.
+        console.log('Received page ranges from user:', req.body.ranges);
+
         const form = new FormData();
         form.append('files', fs.createReadStream(req.file.path), { filename: req.file.originalname });
         
-        // <<<<<<<<<<<< THE REAL, FINAL FIX IS HERE >>>>>>>>>>>>
-        // We only need to send the 'pages' parameter. No 'splitMode' or 'splitSpan'.
+        // We will use the 'pages' parameter as it's the simplest.
         form.append('pages', req.body.ranges);
 
-        console.log(`Sending PDF to Gotenberg for splitting with ranges: ${req.body.ranges}`);
+        console.log(`Sending PDF to Gotenberg for splitting with pages: ${req.body.ranges}`);
         const gotenbergUrl = 'https://shaheem-gotenberg.fly.dev/forms/pdfengines/split';
         
         const request = https.request(gotenbergUrl, { method: 'POST', headers: form.getHeaders() }, (response) => {
             if (response.statusCode !== 200) {
                 console.error(`Split Error - Gotenberg Status: ${response.statusCode}`);
+                // Let's see the exact error message from Gotenberg
                 response.on('data', (chunk) => console.error('Gotenberg Message:', chunk.toString()));
                 res.status(500).send('Sorry, Gotenberg could not process the file. Check your page ranges.');
                 cleanupFile();
