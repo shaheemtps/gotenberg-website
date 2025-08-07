@@ -113,7 +113,7 @@ app.post('/convert-html', upload.single('htmlfile'), (req, res) => {
 });
 
 
-// --- ROUTE 3: SPLIT PDF (THE ULTIMATE FIX - COMBINING ALL PARAMS) ---
+// --- ROUTE 3: SPLIT PDF (THE ULTIMATE, LOGICAL FIX) ---
 app.post('/split', upload.single('pdffile'), (req, res) => {
     const cleanupFile = () => {
         if (req.file) {
@@ -127,11 +127,11 @@ app.post('/split', upload.single('pdffile'), (req, res) => {
         const form = new FormData();
         form.append('files', fs.createReadStream(req.file.path), { filename: req.file.originalname });
         
-        // <<<<<<<<<<<< THE FINAL FIX IS HERE >>>>>>>>>>>>
-        // We need to provide ALL three parameters for Gotenberg v8 to understand the request.
-        form.append('pages', req.body.ranges);
-        form.append('splitMode', 'intervals'); // 'intervals' is the mode for splitting by ranges.
-        form.append('splitSpan', '1'); // This is required, even if not used in 'intervals' mode.
+        // <<<<<<<<<<<< THE REAL FIX IS HERE >>>>>>>>>>>>
+        // The parameter name for the range ('intervals') MUST match the 'splitMode'.
+        form.append('splitMode', 'intervals');
+        form.append('intervals', req.body.ranges); // Changed 'pages' back to 'intervals'.
+        form.append('splitSpan', '1'); // This is still required by the engine.
 
         console.log(`Sending PDF to Gotenberg for splitting with ranges: ${req.body.ranges}`);
         const gotenbergUrl = 'https://shaheem-gotenberg.fly.dev/forms/pdfengines/split';
