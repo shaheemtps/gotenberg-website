@@ -14,8 +14,10 @@ app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 
 
-// --- ROUTE 1: MERGE PDFS ---
+// --- ROUTE 1: MERGE PDFs ---
+// (This route is correct and requires no changes)
 app.post('/merge', upload.array('files'), (req, res) => {
+    // ... code for merge ...
     const cleanupFiles = () => {
         for (const file of req.files) {
             fs.unlink(file.path, (err) => {
@@ -64,7 +66,9 @@ app.post('/merge', upload.array('files'), (req, res) => {
 
 
 // --- ROUTE 2: CONVERT HTML TO PDF ---
+// (This route is correct and requires no changes)
 app.post('/convert-html', upload.single('htmlfile'), (req, res) => {
+    // ... code for HTML convert ...
     const cleanupFile = () => {
         if (req.file) {
             fs.unlink(req.file.path, (err) => {
@@ -112,7 +116,7 @@ app.post('/convert-html', upload.single('htmlfile'), (req, res) => {
 });
 
 
-// --- ROUTE 3: SPLIT PDF ---
+// --- ROUTE 3: SPLIT PDF (WITH THE FINAL FIX) ---
 app.post('/split', upload.single('pdffile'), (req, res) => {
     const cleanupFile = () => {
         if (req.file) {
@@ -125,9 +129,12 @@ app.post('/split', upload.single('pdffile'), (req, res) => {
     try {
         const form = new FormData();
         form.append('files', fs.createReadStream(req.file.path), { filename: req.file.originalname });
-        
-        // This should now work correctly because of the urlencoded middleware
         form.append('intervals', req.body.ranges);
+
+        // <<<<<<<<<<<< THE FINAL FIX IS HERE >>>>>>>>>>>>
+        // These two fields are required by Gotenberg v8 for the split engine.
+        form.append('splitMode', 'intervals');
+        form.append('splitSpan', '1');
 
         console.log(`Sending PDF to Gotenberg for splitting with ranges: ${req.body.ranges}`);
         const gotenbergUrl = 'https://shaheem-gotenberg.fly.dev/forms/pdfengines/split';
